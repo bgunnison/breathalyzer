@@ -1,0 +1,422 @@
+{
+    "vstgui-ui-description": {
+        "version": "1",
+        "variables": {},
+        "bitmaps": {},
+        "fonts": {
+            "TitleFont": {
+                "bold": "true",
+                "size": "22"
+            },
+            "BodyFont": {
+                "size": "13"
+            }
+        },
+        "colors": {
+            "PanelBackground": "#101821ff",
+            "PanelSurface": "#162431ff",
+            "PanelStroke": "#2c4456ff",
+            "Accent": "#f4c26bff",
+            "TextMain": "#f7f3edff",
+            "TextDim": "#9fb3c1ff"
+        },
+        "control-tags": {
+            "Param::Shape": "0",
+            "Param::Breath": "1",
+            "Param::Voice": "2",
+            "Param::Release": "3",
+            "Param::Humanize": "4",
+            "Param::Tone": "5"
+        },
+        "custom": {
+            "FocusDrawing": {
+                "color": "Accent",
+                "enabled": "true",
+                "width": "1"
+            },
+            "UITemplateController": {
+                "SelectedTemplate": "view"
+            },
+            "UIEditController": {
+                "EditViewScale": "1",
+                "EditorSize": "0, 0, 920, 340",
+                "Version": "1"
+            },
+            "VST3Editor": {
+                "Path": "C:\\projects\\ableplugs\\breathalyzer\\vst3\\breathalyzer.uidesc"
+            }
+        },
+        "templates": {
+            "view": {
+                "attributes": {
+                    "background-color": "PanelBackground",
+                    "background-color-draw-style": "filled and stroked",
+                    "class": "CViewContainer",
+                    "mouse-enabled": "true",
+                    "opacity": "1",
+                    "origin": "0, 0",
+                    "size": "920, 340",
+                    "transparent": "false",
+                    "wants-focus": "false"
+                },
+                "children": {
+                    "CViewContainer": {
+                        "attributes": {
+                            "background-color": "PanelSurface",
+                            "background-color-draw-style": "filled and stroked",
+                            "class": "CViewContainer",
+                            "mouse-enabled": "true",
+                            "opacity": "1",
+                            "origin": "18, 18",
+                            "size": "884, 304",
+                            "transparent": "false",
+                            "wants-focus": "false"
+                        },
+                        "children": {
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "TitleFont",
+                                    "font-antialias": "true",
+                                    "font-color": "TextMain",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "24, 18",
+                                    "size": "260, 28",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "Breathalyzer",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "TextDim",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "24, 48",
+                                    "size": "520, 20",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "Pitch shifts mouth color. Velocity drives pressure, brightness, and turbulence.",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "60, 96",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "SHAPE",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Shape",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "60, 126",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "345, 96",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "BREATH",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Breath",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "345, 126",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "630, 96",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "VOICE",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Voice",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "630, 126",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "60, 208",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "RELEASE",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Release",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "60, 238",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "345, 208",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "HUMANIZE",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Humanize",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "345, 238",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "630, 208",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "TONE",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Tone",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "630, 238",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
