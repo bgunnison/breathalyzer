@@ -51,6 +51,7 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::initialize(FUnknown* conte
     addAsciiParameter(parameters, "RELEASE", kParamRelease, defaultNormalized(kParamRelease));
     addAsciiParameter(parameters, "HUMANIZE", kParamHumanize, defaultNormalized(kParamHumanize));
     addAsciiParameter(parameters, "TONE", kParamTone, defaultNormalized(kParamTone));
+    addAsciiParameter(parameters, "ATTACK", kParamAttack, defaultNormalized(kParamAttack));
 
     for (const auto pid : paramOrder_) {
         paramState_[pid] = defaultNormalized(pid);
@@ -116,6 +117,12 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::getParamStringByValue(Para
                                                                             String128 string) {
     UString128 result(string);
     char text[32]{};
+    if (pid == kParamAttack) {
+        std::snprintf(text, sizeof(text), "%.3f s", attackSecondsFromNormalized(valueNormalized));
+        result.fromAscii(text);
+        return kResultOk;
+    }
+
     if (pid == kParamRelease) {
         std::snprintf(text, sizeof(text), "%.2f s", releaseSecondsFromNormalized(valueNormalized));
         result.fromAscii(text);
@@ -146,6 +153,11 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::getParamValueByString(Para
         return kResultFalse;
     }
 
+    if (pid == kParamAttack) {
+        valueNormalized = normalizedFromAttackSeconds(parsed);
+        return kResultOk;
+    }
+
     if (pid == kParamRelease) {
         valueNormalized = normalizedFromReleaseSeconds(parsed);
         return kResultOk;
@@ -174,6 +186,7 @@ void BreathalyzerController::buildParamOrder() {
     paramOrder_.push_back(kParamRelease);
     paramOrder_.push_back(kParamHumanize);
     paramOrder_.push_back(kParamTone);
+    paramOrder_.push_back(kParamAttack);
 }
 
 ParamValue BreathalyzerController::defaultNormalized(ParamID pid) const {
@@ -184,6 +197,7 @@ ParamValue BreathalyzerController::defaultNormalized(ParamID pid) const {
         case kParamRelease: return kDefaultRelease;
         case kParamHumanize: return kDefaultHumanize;
         case kParamTone: return kDefaultTone;
+        case kParamAttack: return kDefaultAttack;
         default: break;
     }
     return 0.0;

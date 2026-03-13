@@ -26,7 +26,8 @@
             "Param::Voice": "2",
             "Param::Release": "3",
             "Param::Humanize": "4",
-            "Param::Tone": "5"
+            "Param::Tone": "5",
+            "Param::Attack": "6"
         },
         "custom": {
             "FocusDrawing": {
@@ -39,7 +40,7 @@
             },
             "UIEditController": {
                 "EditViewScale": "1",
-                "EditorSize": "0, 0, 920, 340",
+                "EditorSize": "0, 0, 1220, 340",
                 "Version": "1"
             },
             "VST3Editor": {
@@ -55,7 +56,7 @@
                     "mouse-enabled": "true",
                     "opacity": "1",
                     "origin": "0, 0",
-                    "size": "920, 340",
+                    "size": "1220, 340",
                     "transparent": "false",
                     "wants-focus": "false"
                 },
@@ -68,7 +69,7 @@
                             "mouse-enabled": "true",
                             "opacity": "1",
                             "origin": "18, 18",
-                            "size": "884, 304",
+                            "size": "1184, 304",
                             "transparent": "false",
                             "wants-focus": "false"
                         },
@@ -262,6 +263,54 @@
                                     "opacity": "1",
                                     "orientation": "horizontal",
                                     "origin": "630, 126",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "915, 96",
+                                    "size": "140, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "ATTACK",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::Attack",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "915, 126",
                                     "size": "190, 20",
                                     "transparent": "false",
                                     "wants-focus": "true",

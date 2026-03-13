@@ -36,7 +36,8 @@ enum ParamIDs : Steinberg::Vst::ParamID {
     kParamVoice = 2,
     kParamRelease = 3,
     kParamHumanize = 4,
-    kParamTone = 5
+    kParamTone = 5,
+    kParamAttack = 6
 };
 
 } // namespace breathalyzer

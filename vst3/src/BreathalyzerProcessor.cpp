@@ -115,6 +115,7 @@ void BreathalyzerProcessor::buildParamOrder() {
     paramOrder_.push_back(kParamRelease);
     paramOrder_.push_back(kParamHumanize);
     paramOrder_.push_back(kParamTone);
+    paramOrder_.push_back(kParamAttack);
 
     paramState_.clear();
     for (const auto pid : paramOrder_) {
@@ -130,6 +131,7 @@ ParamValue BreathalyzerProcessor::defaultNormalized(ParamID pid) const {
         case kParamRelease: return kDefaultRelease;
         case kParamHumanize: return kDefaultHumanize;
         case kParamTone: return kDefaultTone;
+        case kParamAttack: return kDefaultAttack;
         default: break;
     }
     return 0.0;
@@ -171,6 +173,7 @@ void BreathalyzerProcessor::applyNormalizedParam(ParamID pid, ParamValue value) 
         case kParamRelease: params_.release = value; break;
         case kParamHumanize: params_.humanize = value; break;
         case kParamTone: params_.tone = value; break;
+        case kParamAttack: params_.attack = value; break;
         default: break;
     }
 }

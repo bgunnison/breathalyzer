@@ -32,6 +32,9 @@ set(Breathalyzer_SOURCES
     src/BreathalyzerProcessor.cpp
     src/BreathalyzerController.cpp
     src/BreathalyzerPluginFactory.cpp
+    src/dasiydsp/adsr.cpp
+    src/dasiydsp/formantosc.cpp
+    src/dasiydsp/FormantVoice.cpp
     ${VST3_SDK_ROOT}/public.sdk/source/main/dllmain.cpp
 )
 
@@ -41,6 +44,10 @@ set(Breathalyzer_HEADERS
     src/BreathalyzerIDs.h
     src/BreathalyzerDefaults.h
     src/dsp/BreathalyzerSynth.h
+    src/dasiydsp/adsr.h
+    src/dasiydsp/dsp.h
+    src/dasiydsp/formantosc.h
+    src/dasiydsp/FormantVoice.h
 )
 
 smtg_add_vst3plugin(Breathalyzer
