@@ -44,6 +44,7 @@ set(Breathalyzer_HEADERS
     src/BreathalyzerIDs.h
     src/BreathalyzerDefaults.h
     src/dsp/BreathalyzerSynth.h
+    src/dsp/growlfx.h
     src/dasiydsp/adsr.h
     src/dasiydsp/dsp.h
     src/dasiydsp/formantosc.h

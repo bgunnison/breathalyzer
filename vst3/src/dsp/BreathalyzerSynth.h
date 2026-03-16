@@ -4,6 +4,7 @@
 
 #include "../BreathalyzerDefaults.h"
 #include "../dasiydsp/FormantVoice.h"
+#include "growlfx.h"
 
 #include <algorithm>
 #include <array>
@@ -22,6 +23,8 @@ public:
         double humanize{kDefaultHumanize};
         double tone{kDefaultTone};
         double attack{kDefaultAttack};
+        double growl{kDefaultGrowl};
+        double growlIntensity{kDefaultGrowlIntensity};
     };
 
     BreathalyzerSynth() {
@@ -32,6 +35,8 @@ public:
         sampleRate_ = sampleRate > 0.0 ? sampleRate : 44100.0;
         leftVoice_.prepare(sampleRate_);
         rightVoice_.prepare(sampleRate_);
+        growlLeft_.setSampleRate(sampleRate_);
+        growlRight_.setSampleRate(sampleRate_);
         prepareSmoothers();
         reset();
     }
@@ -41,8 +46,12 @@ public:
         rightVoice_.reset();
         noiseStateLeft_ = 0.0;
         noiseStateRight_ = 0.0;
+        humanizePhaseA_ = 0.0;
+        humanizePhaseB_ = 2.0943951023931953;
         toneFilterLeft_.reset();
         toneFilterRight_.reset();
+        growlLeft_.reset();
+        growlRight_.reset();
         resetSmoothersToParams();
         applySmoothedParams(currentSmoothedParams(), true);
     }
@@ -56,11 +65,16 @@ public:
         humanizeSmoother_.setTarget(clamp01(params_.humanize));
         toneSmoother_.setTarget(clamp01(params_.tone));
         attackSmoother_.setTarget(clamp01(params_.attack));
+        growlSmoother_.setTarget(clamp01(params_.growl));
+        growlIntensitySmoother_.setTarget(clamp01(params_.growlIntensity));
     }
 
     void noteOn(int pitch, double velocity, int32_t noteId, int16_t channel) {
         leftVoice_.noteOn(pitch, velocity, noteId, channel);
         rightVoice_.noteOn(pitch, velocity, noteId, channel);
+        const double growl = clamp01(params_.growl);
+        growlLeft_.trigger(growl);
+        growlRight_.trigger(growl);
     }
 
     void noteOff(int pitch, int32_t noteId, int16_t channel) {
@@ -78,6 +92,17 @@ public:
         applySmoothedParams(p);
 
         const double tonalBlend = std::pow(p.voice, 2.6);
+        const double humanizeDepth = std::pow(p.humanize, 1.15);
+
+        humanizePhaseA_ += (2.0 * 3.14159265358979323846 * (0.23 + 1.70 * humanizeDepth)) / sampleRate_;
+        humanizePhaseB_ += (2.0 * 3.14159265358979323846 * (0.41 + 2.60 * humanizeDepth)) / sampleRate_;
+        if (humanizePhaseA_ >= 2.0 * 3.14159265358979323846) {
+            humanizePhaseA_ -= 2.0 * 3.14159265358979323846;
+        }
+        if (humanizePhaseB_ >= 2.0 * 3.14159265358979323846) {
+            humanizePhaseB_ -= 2.0 * 3.14159265358979323846;
+        }
+        const double humanizeMotion = (std::sin(humanizePhaseA_) + 0.6 * std::sin(humanizePhaseB_ + 0.7)) / 1.6;
 
         const double voicedLeft = leftVoice_.processSample();
         const double voicedRight = rightVoice_.processSample();
@@ -86,24 +111,39 @@ public:
 
         const double whiteLeft = randBipolar(randomLeft_);
         const double whiteRight = randBipolar(randomRight_);
-        const double noiseFollow = 0.025 + 0.085 * p.breath;
+        const double noiseFollow = 0.010 + 0.190 * p.breath;
         noiseStateLeft_ += noiseFollow * (whiteLeft - noiseStateLeft_);
         noiseStateRight_ += noiseFollow * (whiteRight - noiseStateRight_);
 
-        const double airyLeft = (whiteLeft - (0.82 - 0.20 * p.tone) * noiseStateLeft_) * (0.42 + 0.58 * p.breath) * envLeft;
-        const double airyRight = (whiteRight - (0.82 - 0.20 * p.tone) * noiseStateRight_) * (0.42 + 0.58 * p.breath) * envRight;
+        const double breathNoiseAmount = 0.18 + 1.35 * p.breath;
+        const double airyLeft = (whiteLeft - (0.86 - 0.28 * p.tone) * noiseStateLeft_) * breathNoiseAmount * envLeft;
+        const double airyRight = (whiteRight - (0.86 - 0.28 * p.tone) * noiseStateRight_) * breathNoiseAmount * envRight;
 
-        const double width = 1.0 + 0.2 * p.humanize;
-        const double sourceLeft = lerp(airyLeft, voicedLeft * width, tonalBlend);
-        const double sourceRight = lerp(airyRight, voicedRight * width, tonalBlend);
+        const double width = 0.90 + 1.05 * humanizeDepth;
+        const double voicedBreathTrim = 1.10 - 0.45 * p.breath;
+        const double leftSkew = 1.0 - 0.28 * humanizeDepth - 0.20 * humanizeDepth * humanizeMotion;
+        const double rightSkew = 1.0 + 0.28 * humanizeDepth + 0.20 * humanizeDepth * humanizeMotion;
+        const double sourceLeft = lerp(airyLeft * (1.0 - 0.12 * humanizeDepth * humanizeMotion),
+                                       voicedLeft * width * voicedBreathTrim * leftSkew,
+                                       tonalBlend);
+        const double sourceRight = lerp(airyRight * (1.0 + 0.12 * humanizeDepth * humanizeMotion),
+                                        voicedRight * width * voicedBreathTrim * rightSkew,
+                                        tonalBlend);
 
-        const double cutoff = 450.0 + std::pow(p.tone, 1.45) * 10800.0 + (1.0 - tonalBlend) * 1600.0;
-        toneFilterLeft_.setLowpass(sampleRate_, cutoff);
-        toneFilterRight_.setLowpass(sampleRate_, cutoff * (1.0 + 0.02 * p.humanize));
+        const double cutoffBase = 450.0 + std::pow(p.tone, 1.45) * 10800.0 + (1.0 - tonalBlend) * 1600.0 + 1800.0 * p.breath;
+        toneFilterLeft_.setLowpass(sampleRate_, cutoffBase * (1.0 - 0.18 * humanizeDepth - 0.10 * humanizeDepth * humanizeMotion));
+        toneFilterRight_.setLowpass(sampleRate_, cutoffBase * (1.0 + 0.18 * humanizeDepth + 0.10 * humanizeDepth * humanizeMotion));
 
-        const double gain = 0.95 + 0.20 * p.breath;
-        left = std::tanh(toneFilterLeft_.process(sourceLeft) * gain);
-        right = std::tanh(toneFilterRight_.process(sourceRight) * gain);
+        growlLeft_.setGrowl(p.growl);
+        growlLeft_.setIntensity(p.growlIntensity);
+        growlRight_.setGrowl(p.growl);
+        growlRight_.setIntensity(p.growlIntensity);
+
+        const double gain = 0.88 + 0.28 * p.breath;
+        const double tonedLeft = toneFilterLeft_.process(sourceLeft);
+        const double tonedRight = toneFilterRight_.process(sourceRight);
+        left = std::tanh(growlLeft_.process(tonedLeft) * gain);
+        right = std::tanh(growlRight_.process(tonedRight) * gain);
     }
 
     bool isSilent() const {
@@ -189,6 +229,8 @@ private:
         double humanize{0.0};
         double tone{0.0};
         double attack{0.0};
+        double growl{0.0};
+        double growlIntensity{0.0};
     };
 
     static double clamp01(double value) {
@@ -219,6 +261,8 @@ private:
         humanizeSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
         toneSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
         attackSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        growlSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        growlIntensitySmoother_.prepare(sampleRate_, kControlSmoothSeconds);
     }
 
     void resetSmoothersToParams() {
@@ -229,6 +273,8 @@ private:
         humanizeSmoother_.reset(clamp01(params_.humanize));
         toneSmoother_.reset(clamp01(params_.tone));
         attackSmoother_.reset(clamp01(params_.attack));
+        growlSmoother_.reset(clamp01(params_.growl));
+        growlIntensitySmoother_.reset(clamp01(params_.growlIntensity));
     }
 
     SmoothedParams currentSmoothedParams() const {
@@ -240,6 +286,8 @@ private:
             humanizeSmoother_.current,
             toneSmoother_.current,
             attackSmoother_.current,
+            growlSmoother_.current,
+            growlIntensitySmoother_.current,
         };
     }
 
@@ -252,18 +300,20 @@ private:
             humanizeSmoother_.next(),
             toneSmoother_.next(),
             attackSmoother_.next(),
+            growlSmoother_.next(),
+            growlIntensitySmoother_.next(),
         };
     }
 
     void applySmoothedParams(const SmoothedParams& p, bool force = false) {
         const float attack = static_cast<float>(attackSecondsFromNormalized(p.attack));
         const float release = static_cast<float>(releaseSecondsFromNormalized(p.release));
-        const float decay = static_cast<float>(0.110 + 0.310 * (1.0 - p.breath) + 0.120 * (1.0 - p.tone));
+        const float decay = static_cast<float>(0.095 + 0.460 * (1.0 - p.breath) + 0.120 * (1.0 - p.tone));
         const float sustain = static_cast<float>(0.28 + 0.62 * p.voice);
-        const float formantBase = static_cast<float>(460.0 + 1700.0 * p.shape + 420.0 * p.tone);
-        const float stereoSpread = static_cast<float>(1.06 + 0.12 * p.humanize);
-        const float basePhase = static_cast<float>(0.04 + 0.62 * p.tone);
-        const float phaseSpread = static_cast<float>(0.03 + 0.12 * p.humanize + 0.08 * p.breath);
+        const float formantBase = static_cast<float>(380.0 + 1800.0 * p.shape + 260.0 * p.tone + 340.0 * p.breath);
+        const float stereoSpread = static_cast<float>(1.00 + 0.45 * p.humanize);
+        const float basePhase = static_cast<float>(0.02 + 0.66 * p.tone);
+        const float phaseSpread = static_cast<float>(0.015 + 0.45 * p.humanize + 0.16 * p.breath);
 
         if (force || std::abs(attack - lastAttackSeconds_) > 1.0e-5f) {
             leftVoice_.setAttackSeconds(attack);
@@ -312,6 +362,8 @@ private:
     Params params_{};
     breathalyzer::daisydsp::FormantVoice leftVoice_{};
     breathalyzer::daisydsp::FormantVoice rightVoice_{};
+    GrowlStage growlLeft_{};
+    GrowlStage growlRight_{};
     FourPoleLowpass toneFilterLeft_{};
     FourPoleLowpass toneFilterRight_{};
     SmoothedValue shapeSmoother_{};
@@ -321,9 +373,13 @@ private:
     SmoothedValue humanizeSmoother_{};
     SmoothedValue toneSmoother_{};
     SmoothedValue attackSmoother_{};
+    SmoothedValue growlSmoother_{};
+    SmoothedValue growlIntensitySmoother_{};
     double sampleRate_{44100.0};
     double noiseStateLeft_{0.0};
     double noiseStateRight_{0.0};
+    double humanizePhaseA_{0.0};
+    double humanizePhaseB_{2.0943951023931953};
     uint32_t randomLeft_{0x13572468u};
     uint32_t randomRight_{0x24681357u};
     float lastAttackSeconds_{-1.0f};

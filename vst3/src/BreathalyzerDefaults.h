@@ -14,12 +14,14 @@ inline constexpr double kDefaultRelease = 0.45;
 inline constexpr double kDefaultHumanize = 0.25;
 inline constexpr double kDefaultTone = 0.55;
 inline constexpr double kDefaultAttack = 0.30;
+inline constexpr double kDefaultGrowl = 0.0;
+inline constexpr double kDefaultGrowlIntensity = 0.0;
 
 inline constexpr double kMinAttackSeconds = 0.002;
-inline constexpr double kMaxAttackSeconds = 0.45;
+inline constexpr double kMaxAttackSeconds = 0.90;
 inline constexpr double kMinReleaseSeconds = 0.04;
 inline constexpr double kMaxReleaseSeconds = 1.84;
-inline constexpr size_t kStateValueCount = 7;
+inline constexpr size_t kStateValueCount = 9;
 
 inline double attackSecondsFromNormalized(double normalized) {
     normalized = std::clamp(normalized, 0.0, 1.0);

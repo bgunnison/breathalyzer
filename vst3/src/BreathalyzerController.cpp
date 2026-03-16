@@ -52,6 +52,8 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::initialize(FUnknown* conte
     addAsciiParameter(parameters, "HUMANIZE", kParamHumanize, defaultNormalized(kParamHumanize));
     addAsciiParameter(parameters, "TONE", kParamTone, defaultNormalized(kParamTone));
     addAsciiParameter(parameters, "ATTACK", kParamAttack, defaultNormalized(kParamAttack));
+    addAsciiParameter(parameters, "GROWL", kParamGrowl, defaultNormalized(kParamGrowl));
+    addAsciiParameter(parameters, "GROWL INTENSITY", kParamGrowlIntensity, defaultNormalized(kParamGrowlIntensity));
 
     for (const auto pid : paramOrder_) {
         paramState_[pid] = defaultNormalized(pid);
@@ -135,6 +137,8 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::getParamStringByValue(Para
         case kParamVoice:
         case kParamHumanize:
         case kParamTone:
+        case kParamGrowl:
+        case kParamGrowlIntensity:
             std::snprintf(text, sizeof(text), "%.0f", valueNormalized * 100.0);
             result.fromAscii(text);
             return kResultOk;
@@ -169,6 +173,8 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::getParamValueByString(Para
         case kParamVoice:
         case kParamHumanize:
         case kParamTone:
+        case kParamGrowl:
+        case kParamGrowlIntensity:
             valueNormalized = std::clamp(parsed / 100.0, 0.0, 1.0);
             return kResultOk;
         default:
@@ -187,6 +193,8 @@ void BreathalyzerController::buildParamOrder() {
     paramOrder_.push_back(kParamHumanize);
     paramOrder_.push_back(kParamTone);
     paramOrder_.push_back(kParamAttack);
+    paramOrder_.push_back(kParamGrowl);
+    paramOrder_.push_back(kParamGrowlIntensity);
 }
 
 ParamValue BreathalyzerController::defaultNormalized(ParamID pid) const {
@@ -198,6 +206,8 @@ ParamValue BreathalyzerController::defaultNormalized(ParamID pid) const {
         case kParamHumanize: return kDefaultHumanize;
         case kParamTone: return kDefaultTone;
         case kParamAttack: return kDefaultAttack;
+        case kParamGrowl: return kDefaultGrowl;
+        case kParamGrowlIntensity: return kDefaultGrowlIntensity;
         default: break;
     }
     return 0.0;
