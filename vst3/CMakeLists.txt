@@ -45,6 +45,13 @@ set(Breathalyzer_HEADERS
     src/BreathalyzerDefaults.h
     src/dsp/BreathalyzerSynth.h
     src/dsp/growlfx.h
+    src/WeCore/SongbirdAEFilter.h
+    src/WeCore/General/CoreMath.h
+    src/WeCore/General/ParameterDefinition.h
+    src/WeCore/WEFilters/TPTSVFilterParameters.h
+    src/WeCore/WEFilters/TPTSVFilter.h
+    src/WeCore/SongbirdFilters/Formant.h
+    src/WeCore/SongbirdFilters/SongbirdFormantFilter.h
     src/dasiydsp/adsr.h
     src/dasiydsp/dsp.h
     src/dasiydsp/formantosc.h
@@ -58,6 +65,7 @@ smtg_add_vst3plugin(Breathalyzer
 
 target_include_directories(Breathalyzer PRIVATE
     ${VST3_SDK_ROOT}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/WeCore
 )
 
 target_link_libraries(Breathalyzer PRIVATE

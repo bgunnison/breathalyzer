@@ -36,6 +36,30 @@ bool parseAsciiFloat(TChar* string, double& value) {
     return end != ascii;
 }
 
+std::vector<double> upgradeStateValues(std::vector<double> values) {
+    if (values.size() == kLegacyStateValueCount) {
+        std::vector<double> upgraded;
+        upgraded.reserve(kSplitGrowlStateValueCount);
+        for (size_t i = 0; i < 7; ++i) {
+            upgraded.push_back(values[i]);
+        }
+
+        const double legacyGrowl = values[7];
+        const double legacyGrowlIntensity = values[8];
+        upgraded.push_back(legacyGrowl);
+        upgraded.push_back(legacyGrowlIntensity);
+        upgraded.push_back(legacyGrowl);
+        upgraded.push_back(legacyGrowlIntensity);
+        values = upgraded;
+    }
+
+    if (values.size() == kSplitGrowlStateValueCount) {
+        values.push_back(kDefaultVoiceSpeed);
+    }
+
+    return values;
+}
+
 } // namespace
 
 Steinberg::tresult PLUGIN_API BreathalyzerController::initialize(FUnknown* context) {
@@ -52,8 +76,17 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::initialize(FUnknown* conte
     addAsciiParameter(parameters, "HUMANIZE", kParamHumanize, defaultNormalized(kParamHumanize));
     addAsciiParameter(parameters, "TONE", kParamTone, defaultNormalized(kParamTone));
     addAsciiParameter(parameters, "ATTACK", kParamAttack, defaultNormalized(kParamAttack));
-    addAsciiParameter(parameters, "GROWL", kParamGrowl, defaultNormalized(kParamGrowl));
-    addAsciiParameter(parameters, "GROWL INTENSITY", kParamGrowlIntensity, defaultNormalized(kParamGrowlIntensity));
+    addAsciiParameter(parameters, "VOICE GROWL", kParamVoiceGrowl, defaultNormalized(kParamVoiceGrowl));
+    addAsciiParameter(parameters,
+                      "VOICE GROWL INTENSITY",
+                      kParamVoiceGrowlIntensity,
+                      defaultNormalized(kParamVoiceGrowlIntensity));
+    addAsciiParameter(parameters, "NOISE GROWL", kParamNoiseGrowl, defaultNormalized(kParamNoiseGrowl));
+    addAsciiParameter(parameters,
+                      "NOISE GROWL INTENSITY",
+                      kParamNoiseGrowlIntensity,
+                      defaultNormalized(kParamNoiseGrowlIntensity));
+    addAsciiParameter(parameters, "VOICE SPEED", kParamVoiceSpeed, defaultNormalized(kParamVoiceSpeed));
 
     for (const auto pid : paramOrder_) {
         paramState_[pid] = defaultNormalized(pid);
@@ -81,6 +114,7 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::setComponentState(IBStream
     while (streamer.readDouble(value)) {
         values.push_back(value);
     }
+    values = upgradeStateValues(values);
 
     for (size_t i = 0; i < paramOrder_.size(); ++i) {
         const ParamID pid = paramOrder_[i];
@@ -131,14 +165,22 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::getParamStringByValue(Para
         return kResultOk;
     }
 
+    if (pid == kParamVoiceSpeed) {
+        std::snprintf(text, sizeof(text), "%.2f Hz", voiceSpeedHzFromNormalized(valueNormalized));
+        result.fromAscii(text);
+        return kResultOk;
+    }
+
     switch (pid) {
         case kParamShape:
         case kParamBreath:
         case kParamVoice:
         case kParamHumanize:
         case kParamTone:
-        case kParamGrowl:
-        case kParamGrowlIntensity:
+        case kParamVoiceGrowl:
+        case kParamVoiceGrowlIntensity:
+        case kParamNoiseGrowl:
+        case kParamNoiseGrowlIntensity:
             std::snprintf(text, sizeof(text), "%.0f", valueNormalized * 100.0);
             result.fromAscii(text);
             return kResultOk;
@@ -167,14 +209,21 @@ Steinberg::tresult PLUGIN_API BreathalyzerController::getParamValueByString(Para
         return kResultOk;
     }
 
+    if (pid == kParamVoiceSpeed) {
+        valueNormalized = normalizedFromVoiceSpeedHz(parsed);
+        return kResultOk;
+    }
+
     switch (pid) {
         case kParamShape:
         case kParamBreath:
         case kParamVoice:
         case kParamHumanize:
         case kParamTone:
-        case kParamGrowl:
-        case kParamGrowlIntensity:
+        case kParamVoiceGrowl:
+        case kParamVoiceGrowlIntensity:
+        case kParamNoiseGrowl:
+        case kParamNoiseGrowlIntensity:
             valueNormalized = std::clamp(parsed / 100.0, 0.0, 1.0);
             return kResultOk;
         default:
@@ -193,8 +242,11 @@ void BreathalyzerController::buildParamOrder() {
     paramOrder_.push_back(kParamHumanize);
     paramOrder_.push_back(kParamTone);
     paramOrder_.push_back(kParamAttack);
-    paramOrder_.push_back(kParamGrowl);
-    paramOrder_.push_back(kParamGrowlIntensity);
+    paramOrder_.push_back(kParamVoiceGrowl);
+    paramOrder_.push_back(kParamVoiceGrowlIntensity);
+    paramOrder_.push_back(kParamNoiseGrowl);
+    paramOrder_.push_back(kParamNoiseGrowlIntensity);
+    paramOrder_.push_back(kParamVoiceSpeed);
 }
 
 ParamValue BreathalyzerController::defaultNormalized(ParamID pid) const {
@@ -206,8 +258,11 @@ ParamValue BreathalyzerController::defaultNormalized(ParamID pid) const {
         case kParamHumanize: return kDefaultHumanize;
         case kParamTone: return kDefaultTone;
         case kParamAttack: return kDefaultAttack;
-        case kParamGrowl: return kDefaultGrowl;
-        case kParamGrowlIntensity: return kDefaultGrowlIntensity;
+        case kParamVoiceGrowl: return kDefaultVoiceGrowl;
+        case kParamVoiceGrowlIntensity: return kDefaultVoiceGrowlIntensity;
+        case kParamNoiseGrowl: return kDefaultNoiseGrowl;
+        case kParamNoiseGrowlIntensity: return kDefaultNoiseGrowlIntensity;
+        case kParamVoiceSpeed: return kDefaultVoiceSpeed;
         default: break;
     }
     return 0.0;

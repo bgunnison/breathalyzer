@@ -14,14 +14,21 @@ inline constexpr double kDefaultRelease = 0.45;
 inline constexpr double kDefaultHumanize = 0.25;
 inline constexpr double kDefaultTone = 0.55;
 inline constexpr double kDefaultAttack = 0.30;
-inline constexpr double kDefaultGrowl = 0.0;
-inline constexpr double kDefaultGrowlIntensity = 0.0;
+inline constexpr double kDefaultVoiceGrowl = 0.0;
+inline constexpr double kDefaultVoiceGrowlIntensity = 0.0;
+inline constexpr double kDefaultNoiseGrowl = 0.0;
+inline constexpr double kDefaultNoiseGrowlIntensity = 0.0;
+inline constexpr double kDefaultVoiceSpeed = 0.28;
 
 inline constexpr double kMinAttackSeconds = 0.002;
 inline constexpr double kMaxAttackSeconds = 0.90;
 inline constexpr double kMinReleaseSeconds = 0.04;
 inline constexpr double kMaxReleaseSeconds = 1.84;
-inline constexpr size_t kStateValueCount = 9;
+inline constexpr double kMinVoiceSpeedHz = 0.05;
+inline constexpr double kMaxVoiceSpeedHz = 8.0;
+inline constexpr size_t kLegacyStateValueCount = 9;
+inline constexpr size_t kSplitGrowlStateValueCount = 11;
+inline constexpr size_t kStateValueCount = 12;
 
 inline double attackSecondsFromNormalized(double normalized) {
     normalized = std::clamp(normalized, 0.0, 1.0);
@@ -41,6 +48,16 @@ inline double releaseSecondsFromNormalized(double normalized) {
 inline double normalizedFromReleaseSeconds(double seconds) {
     seconds = std::clamp(seconds, kMinReleaseSeconds, kMaxReleaseSeconds);
     return std::sqrt((seconds - kMinReleaseSeconds) / (kMaxReleaseSeconds - kMinReleaseSeconds));
+}
+
+inline double voiceSpeedHzFromNormalized(double normalized) {
+    normalized = std::clamp(normalized, 0.0, 1.0);
+    return kMinVoiceSpeedHz + (normalized * normalized) * (kMaxVoiceSpeedHz - kMinVoiceSpeedHz);
+}
+
+inline double normalizedFromVoiceSpeedHz(double hz) {
+    hz = std::clamp(hz, kMinVoiceSpeedHz, kMaxVoiceSpeedHz);
+    return std::sqrt((hz - kMinVoiceSpeedHz) / (kMaxVoiceSpeedHz - kMinVoiceSpeedHz));
 }
 
 } // namespace breathalyzer

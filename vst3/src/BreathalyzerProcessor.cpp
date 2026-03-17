@@ -44,6 +44,30 @@ uint64 silenceFlagsForChannels(uint32 numChannels) {
     return (1ull << numChannels) - 1ull;
 }
 
+std::vector<double> upgradeStateValues(std::vector<double> values) {
+    if (values.size() == kLegacyStateValueCount) {
+        std::vector<double> upgraded;
+        upgraded.reserve(kSplitGrowlStateValueCount);
+        for (size_t i = 0; i < 7; ++i) {
+            upgraded.push_back(values[i]);
+        }
+
+        const double legacyGrowl = values[7];
+        const double legacyGrowlIntensity = values[8];
+        upgraded.push_back(legacyGrowl);
+        upgraded.push_back(legacyGrowlIntensity);
+        upgraded.push_back(legacyGrowl);
+        upgraded.push_back(legacyGrowlIntensity);
+        values = upgraded;
+    }
+
+    if (values.size() == kSplitGrowlStateValueCount) {
+        values.push_back(kDefaultVoiceSpeed);
+    }
+
+    return values;
+}
+
 } // namespace
 
 BreathalyzerProcessor::BreathalyzerProcessor() {
@@ -116,8 +140,11 @@ void BreathalyzerProcessor::buildParamOrder() {
     paramOrder_.push_back(kParamHumanize);
     paramOrder_.push_back(kParamTone);
     paramOrder_.push_back(kParamAttack);
-    paramOrder_.push_back(kParamGrowl);
-    paramOrder_.push_back(kParamGrowlIntensity);
+    paramOrder_.push_back(kParamVoiceGrowl);
+    paramOrder_.push_back(kParamVoiceGrowlIntensity);
+    paramOrder_.push_back(kParamNoiseGrowl);
+    paramOrder_.push_back(kParamNoiseGrowlIntensity);
+    paramOrder_.push_back(kParamVoiceSpeed);
 
     paramState_.clear();
     for (const auto pid : paramOrder_) {
@@ -134,8 +161,11 @@ ParamValue BreathalyzerProcessor::defaultNormalized(ParamID pid) const {
         case kParamHumanize: return kDefaultHumanize;
         case kParamTone: return kDefaultTone;
         case kParamAttack: return kDefaultAttack;
-        case kParamGrowl: return kDefaultGrowl;
-        case kParamGrowlIntensity: return kDefaultGrowlIntensity;
+        case kParamVoiceGrowl: return kDefaultVoiceGrowl;
+        case kParamVoiceGrowlIntensity: return kDefaultVoiceGrowlIntensity;
+        case kParamNoiseGrowl: return kDefaultNoiseGrowl;
+        case kParamNoiseGrowlIntensity: return kDefaultNoiseGrowlIntensity;
+        case kParamVoiceSpeed: return kDefaultVoiceSpeed;
         default: break;
     }
     return 0.0;
@@ -178,8 +208,11 @@ void BreathalyzerProcessor::applyNormalizedParam(ParamID pid, ParamValue value) 
         case kParamHumanize: params_.humanize = value; break;
         case kParamTone: params_.tone = value; break;
         case kParamAttack: params_.attack = value; break;
-        case kParamGrowl: params_.growl = value; break;
-        case kParamGrowlIntensity: params_.growlIntensity = value; break;
+        case kParamVoiceGrowl: params_.voiceGrowl = value; break;
+        case kParamVoiceGrowlIntensity: params_.voiceGrowlIntensity = value; break;
+        case kParamNoiseGrowl: params_.noiseGrowl = value; break;
+        case kParamNoiseGrowlIntensity: params_.noiseGrowlIntensity = value; break;
+        case kParamVoiceSpeed: params_.voiceSpeed = value; break;
         default: break;
     }
 }
@@ -303,6 +336,7 @@ Steinberg::tresult PLUGIN_API BreathalyzerProcessor::setState(IBStream* state) {
     while (streamer.readDouble(value)) {
         values.push_back(value);
     }
+    values = upgradeStateValues(values);
 
     for (size_t i = 0; i < paramOrder_.size(); ++i) {
         const ParamID pid = paramOrder_[i];

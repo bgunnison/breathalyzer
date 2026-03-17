@@ -28,8 +28,11 @@
             "Param::Humanize": "4",
             "Param::Tone": "5",
             "Param::Attack": "6",
-            "Param::Growl": "7",
-            "Param::GrowlIntensity": "8"
+            "Param::VoiceGrowl": "7",
+            "Param::VoiceGrowlIntensity": "8",
+            "Param::NoiseGrowl": "9",
+            "Param::NoiseGrowlIntensity": "10",
+            "Param::VoiceSpeed": "11"
         },
         "custom": {
             "FocusDrawing": {
@@ -42,7 +45,7 @@
             },
             "UIEditController": {
                 "EditViewScale": "1",
-                "EditorSize": "0, 0, 1520, 340",
+                "EditorSize": "0, 0, 1805, 340",
                 "Version": "1"
             },
             "VST3Editor": {
@@ -58,7 +61,7 @@
                     "mouse-enabled": "true",
                     "opacity": "1",
                     "origin": "0, 0",
-                    "size": "1520, 340",
+                    "size": "1805, 340",
                     "transparent": "false",
                     "wants-focus": "false"
                 },
@@ -71,7 +74,7 @@
                             "mouse-enabled": "true",
                             "opacity": "1",
                             "origin": "18, 18",
-                            "size": "1484, 304",
+                            "size": "1769, 304",
                             "transparent": "false",
                             "wants-focus": "false"
                         },
@@ -340,7 +343,7 @@
                                     "style-no-frame": "true",
                                     "style-no-text": "false",
                                     "text-alignment": "left",
-                                    "title": "GROWL",
+                                    "title": "VOICE GROWL",
                                     "transparent": "true",
                                     "value-precision": "2",
                                     "wants-focus": "false"
@@ -349,7 +352,7 @@
                             "CSlider": {
                                 "attributes": {
                                     "class": "CSlider",
-                                    "control-tag": "Param::Growl",
+                                    "control-tag": "Param::VoiceGrowl",
                                     "draw-back": "true",
                                     "draw-back-color": "PanelStroke",
                                     "draw-frame": "true",
@@ -527,12 +530,12 @@
                                     "min-value": "0",
                                     "mouse-enabled": "true",
                                     "opacity": "1",
-                                    "origin": "1200, 208",
-                                    "size": "180, 18",
+                                    "origin": "915, 208",
+                                    "size": "160, 18",
                                     "style-no-frame": "true",
                                     "style-no-text": "false",
                                     "text-alignment": "left",
-                                    "title": "GROWL INTENSITY",
+                                    "title": "VOICE SPEED",
                                     "transparent": "true",
                                     "value-precision": "2",
                                     "wants-focus": "false"
@@ -541,7 +544,55 @@
                             "CSlider": {
                                 "attributes": {
                                     "class": "CSlider",
-                                    "control-tag": "Param::GrowlIntensity",
+                                    "control-tag": "Param::VoiceSpeed",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "915, 238",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "1200, 208",
+                                    "size": "180, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "VOICE GROWL INTENSITY",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::VoiceGrowlIntensity",
                                     "draw-back": "true",
                                     "draw-back-color": "PanelStroke",
                                     "draw-frame": "true",
@@ -553,6 +604,102 @@
                                     "opacity": "1",
                                     "orientation": "horizontal",
                                     "origin": "1200, 238",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "1485, 96",
+                                    "size": "170, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "NOISE GROWL",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::NoiseGrowl",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "1485, 126",
+                                    "size": "190, 20",
+                                    "transparent": "false",
+                                    "wants-focus": "true",
+                                    "wheel-inc-value": "0.01",
+                                    "zoom-factor": "10"
+                                }
+                            },
+                            "CTextLabel": {
+                                "attributes": {
+                                    "back-color": "PanelSurface",
+                                    "background-offset": "0, 0",
+                                    "class": "CTextLabel",
+                                    "default-value": "0.5",
+                                    "font": "BodyFont",
+                                    "font-antialias": "true",
+                                    "font-color": "Accent",
+                                    "frame-color": "PanelSurface",
+                                    "frame-width": "1",
+                                    "max-value": "1",
+                                    "min-value": "0",
+                                    "mouse-enabled": "true",
+                                    "opacity": "1",
+                                    "origin": "1485, 208",
+                                    "size": "190, 18",
+                                    "style-no-frame": "true",
+                                    "style-no-text": "false",
+                                    "text-alignment": "left",
+                                    "title": "NOISE GROWL INTENSITY",
+                                    "transparent": "true",
+                                    "value-precision": "2",
+                                    "wants-focus": "false"
+                                }
+                            },
+                            "CSlider": {
+                                "attributes": {
+                                    "class": "CSlider",
+                                    "control-tag": "Param::NoiseGrowlIntensity",
+                                    "draw-back": "true",
+                                    "draw-back-color": "PanelStroke",
+                                    "draw-frame": "true",
+                                    "draw-frame-color": "Accent",
+                                    "draw-value": "true",
+                                    "draw-value-color": "Accent",
+                                    "frame-width": "1",
+                                    "mode": "free click",
+                                    "opacity": "1",
+                                    "orientation": "horizontal",
+                                    "origin": "1485, 238",
                                     "size": "190, 20",
                                     "transparent": "false",
                                     "wants-focus": "true",

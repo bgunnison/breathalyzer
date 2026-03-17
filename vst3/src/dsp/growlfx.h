@@ -35,6 +35,11 @@ namespace breathalyzer::dsp {
             sampleRate_ = (sampleRate > MIN_SAMPLE_RATE) ? sampleRate : DEFAULT_SAMPLE_RATE;
         }
 
+        void setRandomSeed(std::uint32_t seed) {
+            initialRandomSeed_ = seed != 0 ? seed : DEFAULT_RANDOM_SEED;
+            randomState_ = initialRandomSeed_;
+        }
+
         void reset() {
             lfoPhase_ = 0.0;
             preLpState_ = 0.0;
@@ -46,7 +51,7 @@ namespace breathalyzer::dsp {
             dryLevel_ = 0.0;
             wetLevel_ = 0.0;
             noiseSmooth_ = 0.0;
-            randomState_ = DEFAULT_RANDOM_SEED;
+            randomState_ = initialRandomSeed_;
             wobbleRateHz_ = DEFAULT_WOBBLE_RATE_HZ;
             wobbleRateTargetHz_ = DEFAULT_WOBBLE_RATE_HZ;
         }
@@ -243,6 +248,7 @@ namespace breathalyzer::dsp {
         double wetLevel_{ 0.0 };
 
         double noiseSmooth_{ 0.0 };
+        std::uint32_t initialRandomSeed_{ DEFAULT_RANDOM_SEED };
         std::uint32_t randomState_{ DEFAULT_RANDOM_SEED };
         double wobbleRateHz_{ DEFAULT_WOBBLE_RATE_HZ };
         double wobbleRateTargetHz_{ DEFAULT_WOBBLE_RATE_HZ };

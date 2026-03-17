@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../BreathalyzerDefaults.h"
+#include "../WeCore/SongbirdAEFilter.h"
 #include "../dasiydsp/FormantVoice.h"
 #include "growlfx.h"
 
@@ -23,8 +24,11 @@ public:
         double humanize{kDefaultHumanize};
         double tone{kDefaultTone};
         double attack{kDefaultAttack};
-        double growl{kDefaultGrowl};
-        double growlIntensity{kDefaultGrowlIntensity};
+        double voiceGrowl{kDefaultVoiceGrowl};
+        double voiceGrowlIntensity{kDefaultVoiceGrowlIntensity};
+        double noiseGrowl{kDefaultNoiseGrowl};
+        double noiseGrowlIntensity{kDefaultNoiseGrowlIntensity};
+        double voiceSpeed{kDefaultVoiceSpeed};
     };
 
     BreathalyzerSynth() {
@@ -35,8 +39,15 @@ public:
         sampleRate_ = sampleRate > 0.0 ? sampleRate : 44100.0;
         leftVoice_.prepare(sampleRate_);
         rightVoice_.prepare(sampleRate_);
-        growlLeft_.setSampleRate(sampleRate_);
-        growlRight_.setSampleRate(sampleRate_);
+        voiceGrowlLeft_.setSampleRate(sampleRate_);
+        voiceGrowlRight_.setSampleRate(sampleRate_);
+        noiseGrowlLeft_.setSampleRate(sampleRate_);
+        noiseGrowlRight_.setSampleRate(sampleRate_);
+        breathFormant_.setSampleRate(sampleRate_);
+        voiceGrowlLeft_.setRandomSeed(0x6A09E667u);
+        voiceGrowlRight_.setRandomSeed(0xBB67AE85u);
+        noiseGrowlLeft_.setRandomSeed(0x3C6EF372u);
+        noiseGrowlRight_.setRandomSeed(0xA54FF53Au);
         prepareSmoothers();
         reset();
     }
@@ -48,10 +59,16 @@ public:
         noiseStateRight_ = 0.0;
         humanizePhaseA_ = 0.0;
         humanizePhaseB_ = 2.0943951023931953;
-        toneFilterLeft_.reset();
-        toneFilterRight_.reset();
-        growlLeft_.reset();
-        growlRight_.reset();
+        voiceSpeedPhase_ = 0.0;
+        voiceToneFilterLeft_.reset();
+        voiceToneFilterRight_.reset();
+        noiseToneFilterLeft_.reset();
+        noiseToneFilterRight_.reset();
+        voiceGrowlLeft_.reset();
+        voiceGrowlRight_.reset();
+        noiseGrowlLeft_.reset();
+        noiseGrowlRight_.reset();
+        breathFormant_.reset();
         resetSmoothersToParams();
         applySmoothedParams(currentSmoothedParams(), true);
     }
@@ -65,16 +82,22 @@ public:
         humanizeSmoother_.setTarget(clamp01(params_.humanize));
         toneSmoother_.setTarget(clamp01(params_.tone));
         attackSmoother_.setTarget(clamp01(params_.attack));
-        growlSmoother_.setTarget(clamp01(params_.growl));
-        growlIntensitySmoother_.setTarget(clamp01(params_.growlIntensity));
+        voiceGrowlSmoother_.setTarget(clamp01(params_.voiceGrowl));
+        voiceGrowlIntensitySmoother_.setTarget(clamp01(params_.voiceGrowlIntensity));
+        noiseGrowlSmoother_.setTarget(clamp01(params_.noiseGrowl));
+        noiseGrowlIntensitySmoother_.setTarget(clamp01(params_.noiseGrowlIntensity));
+        voiceSpeedSmoother_.setTarget(clamp01(params_.voiceSpeed));
     }
 
     void noteOn(int pitch, double velocity, int32_t noteId, int16_t channel) {
         leftVoice_.noteOn(pitch, velocity, noteId, channel);
         rightVoice_.noteOn(pitch, velocity, noteId, channel);
-        const double growl = clamp01(params_.growl);
-        growlLeft_.trigger(growl);
-        growlRight_.trigger(growl);
+        const double voiceGrowl = clamp01(params_.voiceGrowl);
+        const double noiseGrowl = clamp01(params_.noiseGrowl);
+        voiceGrowlLeft_.trigger(voiceGrowl);
+        voiceGrowlRight_.trigger(voiceGrowl);
+        noiseGrowlLeft_.trigger(noiseGrowl);
+        noiseGrowlRight_.trigger(noiseGrowl);
     }
 
     void noteOff(int pitch, int32_t noteId, int16_t channel) {
@@ -93,16 +116,22 @@ public:
 
         const double tonalBlend = std::pow(p.voice, 2.6);
         const double humanizeDepth = std::pow(p.humanize, 1.15);
+        const double voiceSpeedHz = voiceSpeedHzFromNormalized(p.voiceSpeed);
 
         humanizePhaseA_ += (2.0 * 3.14159265358979323846 * (0.23 + 1.70 * humanizeDepth)) / sampleRate_;
         humanizePhaseB_ += (2.0 * 3.14159265358979323846 * (0.41 + 2.60 * humanizeDepth)) / sampleRate_;
+        voiceSpeedPhase_ += (2.0 * 3.14159265358979323846 * voiceSpeedHz) / sampleRate_;
         if (humanizePhaseA_ >= 2.0 * 3.14159265358979323846) {
             humanizePhaseA_ -= 2.0 * 3.14159265358979323846;
         }
         if (humanizePhaseB_ >= 2.0 * 3.14159265358979323846) {
             humanizePhaseB_ -= 2.0 * 3.14159265358979323846;
         }
+        if (voiceSpeedPhase_ >= 2.0 * 3.14159265358979323846) {
+            voiceSpeedPhase_ -= 2.0 * 3.14159265358979323846;
+        }
         const double humanizeMotion = (std::sin(humanizePhaseA_) + 0.6 * std::sin(humanizePhaseB_ + 0.7)) / 1.6;
+        const double vowelMorph = 0.5 + 0.5 * std::sin(voiceSpeedPhase_);
 
         const double voicedLeft = leftVoice_.processSample();
         const double voicedRight = rightVoice_.processSample();
@@ -123,27 +152,38 @@ public:
         const double voicedBreathTrim = 1.10 - 0.45 * p.breath;
         const double leftSkew = 1.0 - 0.28 * humanizeDepth - 0.20 * humanizeDepth * humanizeMotion;
         const double rightSkew = 1.0 + 0.28 * humanizeDepth + 0.20 * humanizeDepth * humanizeMotion;
-        const double sourceLeft = lerp(airyLeft * (1.0 - 0.12 * humanizeDepth * humanizeMotion),
-                                       voicedLeft * width * voicedBreathTrim * leftSkew,
-                                       tonalBlend);
-        const double sourceRight = lerp(airyRight * (1.0 + 0.12 * humanizeDepth * humanizeMotion),
-                                        voicedRight * width * voicedBreathTrim * rightSkew,
-                                        tonalBlend);
+        const double noiseSourceLeft = airyLeft * (1.0 - 0.12 * humanizeDepth * humanizeMotion);
+        const double noiseSourceRight = airyRight * (1.0 + 0.12 * humanizeDepth * humanizeMotion);
+        double vowelNoiseLeft = 0.0;
+        double vowelNoiseRight = 0.0;
+        breathFormant_.process(noiseSourceLeft, noiseSourceRight, vowelMorph, vowelNoiseLeft, vowelNoiseRight);
+        const double voiceSourceLeft = voicedLeft * width * voicedBreathTrim * leftSkew;
+        const double voiceSourceRight = voicedRight * width * voicedBreathTrim * rightSkew;
 
         const double cutoffBase = 450.0 + std::pow(p.tone, 1.45) * 10800.0 + (1.0 - tonalBlend) * 1600.0 + 1800.0 * p.breath;
-        toneFilterLeft_.setLowpass(sampleRate_, cutoffBase * (1.0 - 0.18 * humanizeDepth - 0.10 * humanizeDepth * humanizeMotion));
-        toneFilterRight_.setLowpass(sampleRate_, cutoffBase * (1.0 + 0.18 * humanizeDepth + 0.10 * humanizeDepth * humanizeMotion));
+        const double leftCutoff = cutoffBase * (1.0 - 0.18 * humanizeDepth - 0.10 * humanizeDepth * humanizeMotion);
+        const double rightCutoff = cutoffBase * (1.0 + 0.18 * humanizeDepth + 0.10 * humanizeDepth * humanizeMotion);
+        voiceToneFilterLeft_.setLowpass(sampleRate_, leftCutoff);
+        voiceToneFilterRight_.setLowpass(sampleRate_, rightCutoff);
+        noiseToneFilterLeft_.setLowpass(sampleRate_, leftCutoff);
+        noiseToneFilterRight_.setLowpass(sampleRate_, rightCutoff);
 
-        growlLeft_.setGrowl(p.growl);
-        growlLeft_.setIntensity(p.growlIntensity);
-        growlRight_.setGrowl(p.growl);
-        growlRight_.setIntensity(p.growlIntensity);
+        voiceGrowlLeft_.setGrowl(p.voiceGrowl);
+        voiceGrowlLeft_.setIntensity(p.voiceGrowlIntensity);
+        voiceGrowlRight_.setGrowl(p.voiceGrowl);
+        voiceGrowlRight_.setIntensity(p.voiceGrowlIntensity);
+        noiseGrowlLeft_.setGrowl(p.noiseGrowl);
+        noiseGrowlLeft_.setIntensity(p.noiseGrowlIntensity);
+        noiseGrowlRight_.setGrowl(p.noiseGrowl);
+        noiseGrowlRight_.setIntensity(p.noiseGrowlIntensity);
 
         const double gain = 0.88 + 0.28 * p.breath;
-        const double tonedLeft = toneFilterLeft_.process(sourceLeft);
-        const double tonedRight = toneFilterRight_.process(sourceRight);
-        left = std::tanh(growlLeft_.process(tonedLeft) * gain);
-        right = std::tanh(growlRight_.process(tonedRight) * gain);
+        const double processedNoiseLeft = noiseGrowlLeft_.process(noiseToneFilterLeft_.process(vowelNoiseLeft));
+        const double processedNoiseRight = noiseGrowlRight_.process(noiseToneFilterRight_.process(vowelNoiseRight));
+        const double processedVoiceLeft = voiceGrowlLeft_.process(voiceToneFilterLeft_.process(voiceSourceLeft));
+        const double processedVoiceRight = voiceGrowlRight_.process(voiceToneFilterRight_.process(voiceSourceRight));
+        left = std::tanh(lerp(processedNoiseLeft, processedVoiceLeft, tonalBlend) * gain);
+        right = std::tanh(lerp(processedNoiseRight, processedVoiceRight, tonalBlend) * gain);
     }
 
     bool isSilent() const {
@@ -229,8 +269,11 @@ private:
         double humanize{0.0};
         double tone{0.0};
         double attack{0.0};
-        double growl{0.0};
-        double growlIntensity{0.0};
+        double voiceGrowl{0.0};
+        double voiceGrowlIntensity{0.0};
+        double noiseGrowl{0.0};
+        double noiseGrowlIntensity{0.0};
+        double voiceSpeed{0.0};
     };
 
     static double clamp01(double value) {
@@ -261,8 +304,11 @@ private:
         humanizeSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
         toneSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
         attackSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
-        growlSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
-        growlIntensitySmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        voiceGrowlSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        voiceGrowlIntensitySmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        noiseGrowlSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        noiseGrowlIntensitySmoother_.prepare(sampleRate_, kControlSmoothSeconds);
+        voiceSpeedSmoother_.prepare(sampleRate_, kControlSmoothSeconds);
     }
 
     void resetSmoothersToParams() {
@@ -273,8 +319,11 @@ private:
         humanizeSmoother_.reset(clamp01(params_.humanize));
         toneSmoother_.reset(clamp01(params_.tone));
         attackSmoother_.reset(clamp01(params_.attack));
-        growlSmoother_.reset(clamp01(params_.growl));
-        growlIntensitySmoother_.reset(clamp01(params_.growlIntensity));
+        voiceGrowlSmoother_.reset(clamp01(params_.voiceGrowl));
+        voiceGrowlIntensitySmoother_.reset(clamp01(params_.voiceGrowlIntensity));
+        noiseGrowlSmoother_.reset(clamp01(params_.noiseGrowl));
+        noiseGrowlIntensitySmoother_.reset(clamp01(params_.noiseGrowlIntensity));
+        voiceSpeedSmoother_.reset(clamp01(params_.voiceSpeed));
     }
 
     SmoothedParams currentSmoothedParams() const {
@@ -286,8 +335,11 @@ private:
             humanizeSmoother_.current,
             toneSmoother_.current,
             attackSmoother_.current,
-            growlSmoother_.current,
-            growlIntensitySmoother_.current,
+            voiceGrowlSmoother_.current,
+            voiceGrowlIntensitySmoother_.current,
+            noiseGrowlSmoother_.current,
+            noiseGrowlIntensitySmoother_.current,
+            voiceSpeedSmoother_.current,
         };
     }
 
@@ -300,8 +352,11 @@ private:
             humanizeSmoother_.next(),
             toneSmoother_.next(),
             attackSmoother_.next(),
-            growlSmoother_.next(),
-            growlIntensitySmoother_.next(),
+            voiceGrowlSmoother_.next(),
+            voiceGrowlIntensitySmoother_.next(),
+            noiseGrowlSmoother_.next(),
+            noiseGrowlIntensitySmoother_.next(),
+            voiceSpeedSmoother_.next(),
         };
     }
 
@@ -362,10 +417,15 @@ private:
     Params params_{};
     breathalyzer::daisydsp::FormantVoice leftVoice_{};
     breathalyzer::daisydsp::FormantVoice rightVoice_{};
-    GrowlStage growlLeft_{};
-    GrowlStage growlRight_{};
-    FourPoleLowpass toneFilterLeft_{};
-    FourPoleLowpass toneFilterRight_{};
+    GrowlStage voiceGrowlLeft_{};
+    GrowlStage voiceGrowlRight_{};
+    GrowlStage noiseGrowlLeft_{};
+    GrowlStage noiseGrowlRight_{};
+    breathalyzer::wecore::SongbirdAEFilter breathFormant_{};
+    FourPoleLowpass voiceToneFilterLeft_{};
+    FourPoleLowpass voiceToneFilterRight_{};
+    FourPoleLowpass noiseToneFilterLeft_{};
+    FourPoleLowpass noiseToneFilterRight_{};
     SmoothedValue shapeSmoother_{};
     SmoothedValue breathSmoother_{};
     SmoothedValue voiceSmoother_{};
@@ -373,13 +433,17 @@ private:
     SmoothedValue humanizeSmoother_{};
     SmoothedValue toneSmoother_{};
     SmoothedValue attackSmoother_{};
-    SmoothedValue growlSmoother_{};
-    SmoothedValue growlIntensitySmoother_{};
+    SmoothedValue voiceGrowlSmoother_{};
+    SmoothedValue voiceGrowlIntensitySmoother_{};
+    SmoothedValue noiseGrowlSmoother_{};
+    SmoothedValue noiseGrowlIntensitySmoother_{};
+    SmoothedValue voiceSpeedSmoother_{};
     double sampleRate_{44100.0};
     double noiseStateLeft_{0.0};
     double noiseStateRight_{0.0};
     double humanizePhaseA_{0.0};
     double humanizePhaseB_{2.0943951023931953};
+    double voiceSpeedPhase_{0.0};
     uint32_t randomLeft_{0x13572468u};
     uint32_t randomRight_{0x24681357u};
     float lastAttackSeconds_{-1.0f};
