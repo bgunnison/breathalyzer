@@ -2,60 +2,87 @@
 
 ```mermaid
 flowchart LR
-  MIDI[MIDI Note/Event Input] --> EVT[Event Dispatch<br/>note on / note off]
-  PARAMS[Parameter Changes] --> MAP[Normalized Param Map]
+  MIDI["MIDI Note / Note-Off"] --> EVT["Event Dispatch"]
+  PARAMS["Parameter Changes"] --> SMOOTH["Smoothed Params"]
 
-  MAP --> SHAPE[Shape / Breath / Voice<br/>Release / Humanize / Tone]
-  EVT --> VOICES[12-Voice Synth State]
-  SHAPE --> VOICES
+  SMOOTH --> ENVSET["Attack / Release / Sustain / Decay Mapping"]
+  EVT --> VOX["Stereo FormantVoice Pair"]
+  ENVSET --> VOX
 
-  VOICES --> ENV[Per-Voice Envelope<br/>attack from velocity+breath<br/>release from RELEASE]
-  VOICES --> PITCH[Pitch -> Mouth Morph<br/>note pitch + SHAPE + humanize drift]
-  VOICES --> RAND[Per-Voice Random Seeds<br/>pan / width / brightness / drift]
+  VOX --> VENV["Shared Voice Envelope"]
+  VOX --> VSRC["Voiced Source"]
+  VENV --> NOISEENV["Noise Envelope Follows Voice Envelope"]
 
-  RAND --> NOISE[White Noise -> Smoothed Turbulence]
-  PITCH --> FORMANTS[3 Resonators<br/>moving vocal formants]
-  VOICES --> BODY[Low Body Oscillator<br/>breathy tonal core]
-  ENV --> MIXSRC[Excitation + Blend Control]
-  NOISE --> MIXSRC
-  BODY --> MIXSRC
-  FORMANTS --> VOICED[Voiced/Formant Texture]
-  MIXSRC --> VOICED
+  SMOOTH --> NOISECFG["Breath / Tone / Humanize"]
+  NOISECFG --> NOISE["White Noise -> Smoothed Turbulence"]
+  NOISEENV --> NOISE
 
-  NOISE --> AIRY[Airy Noise Path]
-  SHAPE --> VOICED
-  SHAPE --> AIRY
+  SMOOTH --> UCFG["Utterance + Utterance Rate + Sync"]
+  EVT --> SYNC["Optional Note-On LFO Restart"]
+  UCFG --> ULFO["Utterance LFO"]
+  SYNC --> ULFO
 
-  AIRY --> VBLEND[VOICE Crossfade<br/>low = airy noise<br/>high = voiced texture]
-  VOICED --> VBLEND
-  SHAPE --> TONE[TONE Lowpass]
-  VBLEND --> TONE
-  TONE --> PAN[Stereo Pan per Voice]
-  ENV --> GAIN[Velocity / Breath / Humanize Gain]
-  PAN --> SUM[Voice Sum]
-  GAIN --> SUM
+  ULFO --> MORPH["Vowel Morph 0..1"]
+  UCFG --> PAIR["Vowel Pair Selection"]
 
-  SUM --> SAT[Tanh Output Soft Clip<br/>polyphony-normalized]
-  SAT --> OUTL[Out L]
-  SAT --> OUTR[Out R]
+  NOISE --> NFORM["Songbird Formant Filter"]
+  MORPH --> NFORM
+  PAIR --> NFORM
+
+  VSRC --> VFORM["Songbird Formant Filter"]
+  MORPH --> VFORM
+  PAIR --> VFORM
+
+  SMOOTH --> HMAN["Humanize Motion / Stereo Skew"]
+  HMAN --> NFORM
+  HMAN --> VFORM
+
+  NFORM --> NTONE["Noise 4-Pole Tone LPF"]
+  VFORM --> VTONE["Voice 4-Pole Tone LPF"]
+
+  SMOOTH --> NGROWLCFG["Noise Growl + Anger"]
+  SMOOTH --> VGROWLCFG["Voice Growl + Anger"]
+  NTONE --> NGROWL["Noise Growl Stage"]
+  NGROWLCFG --> NGROWL
+  VTONE --> VGROWL["Voice Growl Stage"]
+  VGROWLCFG --> VGROWL
+
+  NGROWL --> BLEND["VOICE Crossfade"]
+  VGROWL --> BLEND
+  SMOOTH --> BLEND
+
+  SMOOTH --> OUTGAIN["Breath-Weighted Output Gain"]
+  BLEND --> SAT["Output tanh"]
+  OUTGAIN --> SAT
+  SAT --> OUTL["Out L"]
+  SAT --> OUTR["Out R"]
 ```
 
-## Control mapping
+## Control Mapping
 
-- `SHAPE`: shifts the note-to-mouth-color mapping, moving the formants between tighter, hissier colors and more open, rounded breath tones.
-- `BREATH`: increases air amount, softens the attack shape, and raises the noisy breath contribution.
-- `VOICE`: crossfades from mostly airy noise into more body and formant-colored voiced texture. The taper is strongly biased so low values stay close to breath noise.
-- `RELEASE`: controls note-off decay. Internally it maps from normalized `0..1` to about `0.04 s .. 1.84 s` with a squared taper.
-- `HUMANIZE`: adds small drift, pan spread, spectral variation, envelope variation, and per-note inconsistency.
-- `TONE`: controls the final lowpass brightness after the airy/voiced blend.
+- `SHAPE`: sets the core mouth/formant center used by the Daisy voiced generator.
+- `UTTERANCE`: selects the neighboring vowel region used by the Songbird formant filters. Low values stay near `A-E`; high values move toward `O-U`.
+- `BREATH` (`VOLUME` in the breath column): drives airy noise amount, turbulence strength, and some brightness lift.
+- `VOICE` (`VOLUME` in the voice column): crossfades between the processed breath branch and the processed voiced branch.
+- `ATTACK`: maps to the voiced ADSR attack time and therefore also shapes the breath path because the noise branch follows the same envelope.
+- `RELEASE`: maps to the voiced ADSR release time.
+- `HUMANIZE`: adds slow left/right motion, spectral skew, stereo spread, and cutoff divergence.
+- `TONE`: drives the final four-pole lowpass cutoff on both voice and noise branches.
+- `VOICE SPEED` (`UTTERANCE RATE` in the UI): sets the utterance LFO rate in Hz.
+- `UTTERANCE SYNC`: when enabled, resets the utterance LFO at note-on; otherwise it free-runs.
+- `VOICE GROWL` (`GROWL` in the voice column): distortion character for the voiced branch.
+- `VOICE GROWL INTENSITY` (`ANGER` in the voice column): wet/dry amount for the voiced growl stage.
+- `NOISE GROWL` (`GROWL` in the breath column): distortion character for the noise branch.
+- `NOISE GROWL INTENSITY` (`ANGER` in the breath column): wet/dry amount for the noise growl stage.
 
-## Notes
+## Implementation Notes
 
-- Breathalyzer is a pure instrument path: no audio input bus is used, only MIDI events and parameter changes.
-- Each note allocates or steals one of up to 12 voices, with note ID and pitch/channel matching used for note-off handling.
-- Pitch does not set a conventional oscillator pitch. It mainly drives the mouth/formant morph, while the tonal body stays in a constrained low range.
-- The noisy component starts from white noise, then derives a smoothed turbulence signal used both for airy hiss and for resonator excitation.
-- The voiced path is produced by exciting three moving resonators whose center frequencies are interpolated from several vowel-like formant sets.
-- The `VOICE` control does not linearly mix noise and tone. It uses a steep curve so the lower half remains mostly breathy and only the upper range adds obvious human-like body.
-- Every voice gets a small random stereo pan and variation offsets, then all active voices are summed, normalized by active voice count, and soft-clipped with `tanh`.
-- Silence flags are set from synth voice activity so the host can treat the instrument as silent when no voices remain active.
+- Breathalyzer is MIDI-only. There is no audio input bus.
+- The voiced generator is the vendored Daisy `FormantVoice` path under `vst3/src/dasiydsp`.
+- The vowel filtering is a vendored WE-Core / Songbird subset under `vst3/src/WeCore`.
+- Both the voiced branch and the breath-noise branch pass through the Songbird formant stage, so utterance motion reads as one shared mouth shape.
+- The utterance filter does not just sweep `A` to `E` anymore. `UTTERANCE` moves the sweep across adjacent vowel pairs in the full `A/E/I/O/U` set.
+- The utterance LFO is normally free-running. `UTTERANCE SYNC` optionally restarts it on note-on.
+- The noise and voice growl processors are separate and use separate random streams, so their wobble and chew motion do not lock together.
+- `VOICE` is intentionally curved, not linear, so lower settings remain mostly airy and upper settings bring in the voiced body more decisively.
+- Final output is soft-clipped with `tanh` after the branch blend and output gain stage.
