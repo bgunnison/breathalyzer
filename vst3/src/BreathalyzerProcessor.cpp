@@ -65,6 +65,14 @@ std::vector<double> upgradeStateValues(std::vector<double> values) {
         values.push_back(kDefaultVoiceSpeed);
     }
 
+    if (values.size() == kVoiceSpeedStateValueCount) {
+        values.push_back(kDefaultUtterance);
+    }
+
+    if (values.size() == kUtteranceStateValueCount) {
+        values.push_back(kDefaultUtteranceSync);
+    }
+
     return values;
 }
 
@@ -145,6 +153,8 @@ void BreathalyzerProcessor::buildParamOrder() {
     paramOrder_.push_back(kParamNoiseGrowl);
     paramOrder_.push_back(kParamNoiseGrowlIntensity);
     paramOrder_.push_back(kParamVoiceSpeed);
+    paramOrder_.push_back(kParamUtterance);
+    paramOrder_.push_back(kParamUtteranceSync);
 
     paramState_.clear();
     for (const auto pid : paramOrder_) {
@@ -166,6 +176,8 @@ ParamValue BreathalyzerProcessor::defaultNormalized(ParamID pid) const {
         case kParamNoiseGrowl: return kDefaultNoiseGrowl;
         case kParamNoiseGrowlIntensity: return kDefaultNoiseGrowlIntensity;
         case kParamVoiceSpeed: return kDefaultVoiceSpeed;
+        case kParamUtterance: return kDefaultUtterance;
+        case kParamUtteranceSync: return kDefaultUtteranceSync;
         default: break;
     }
     return 0.0;
@@ -213,6 +225,8 @@ void BreathalyzerProcessor::applyNormalizedParam(ParamID pid, ParamValue value) 
         case kParamNoiseGrowl: params_.noiseGrowl = value; break;
         case kParamNoiseGrowlIntensity: params_.noiseGrowlIntensity = value; break;
         case kParamVoiceSpeed: params_.voiceSpeed = value; break;
+        case kParamUtterance: params_.utterance = value; break;
+        case kParamUtteranceSync: params_.utteranceSync = value; break;
         default: break;
     }
 }

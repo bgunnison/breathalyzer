@@ -93,4 +93,5 @@ set_target_properties(Breathalyzer PROPERTIES
 smtg_target_add_plugin_resources(Breathalyzer
     RESOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/breathalyzer.uidesc
+        ${CMAKE_CURRENT_SOURCE_DIR}/logo_strip.png
 )

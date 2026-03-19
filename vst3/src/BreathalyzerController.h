@@ -5,13 +5,14 @@
 #include "BreathalyzerIDs.h"
 
 #include "public.sdk/source/vst/vsteditcontroller.h"
+#include "vstgui/plugin-bindings/vst3editor.h"
 
 #include <unordered_map>
 #include <vector>
 
 namespace breathalyzer {
 
-class BreathalyzerController : public Steinberg::Vst::EditControllerEx1 {
+class BreathalyzerController : public Steinberg::Vst::EditControllerEx1, public VSTGUI::VST3EditorDelegate {
 public:
     BreathalyzerController() = default;
 
@@ -32,6 +33,8 @@ public:
     Steinberg::tresult PLUGIN_API getParamValueByString(Steinberg::Vst::ParamID pid,
                                                         Steinberg::Vst::TChar* string,
                                                         Steinberg::Vst::ParamValue& valueNormalized) SMTG_OVERRIDE;
+    VSTGUI::CView* verifyView(VSTGUI::CView* view, const VSTGUI::UIAttributes& attributes,
+                              const VSTGUI::IUIDescription* description, VSTGUI::VST3Editor* editor) SMTG_OVERRIDE;
 
 private:
     void buildParamOrder();

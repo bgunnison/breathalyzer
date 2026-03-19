@@ -19,6 +19,8 @@ inline constexpr double kDefaultVoiceGrowlIntensity = 0.0;
 inline constexpr double kDefaultNoiseGrowl = 0.0;
 inline constexpr double kDefaultNoiseGrowlIntensity = 0.0;
 inline constexpr double kDefaultVoiceSpeed = 0.28;
+inline constexpr double kDefaultUtterance = 0.0;
+inline constexpr double kDefaultUtteranceSync = 0.0;
 
 inline constexpr double kMinAttackSeconds = 0.002;
 inline constexpr double kMaxAttackSeconds = 0.90;
@@ -28,7 +30,9 @@ inline constexpr double kMinVoiceSpeedHz = 0.05;
 inline constexpr double kMaxVoiceSpeedHz = 8.0;
 inline constexpr size_t kLegacyStateValueCount = 9;
 inline constexpr size_t kSplitGrowlStateValueCount = 11;
-inline constexpr size_t kStateValueCount = 12;
+inline constexpr size_t kVoiceSpeedStateValueCount = 12;
+inline constexpr size_t kUtteranceStateValueCount = 13;
+inline constexpr size_t kStateValueCount = 14;
 
 inline double attackSecondsFromNormalized(double normalized) {
     normalized = std::clamp(normalized, 0.0, 1.0);

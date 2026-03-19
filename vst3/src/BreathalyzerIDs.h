@@ -42,7 +42,9 @@ enum ParamIDs : Steinberg::Vst::ParamID {
     kParamVoiceGrowlIntensity = 8,
     kParamNoiseGrowl = 9,
     kParamNoiseGrowlIntensity = 10,
-    kParamVoiceSpeed = 11
+    kParamVoiceSpeed = 11,
+    kParamUtterance = 12,
+    kParamUtteranceSync = 13
 };
 
 } // namespace breathalyzer
