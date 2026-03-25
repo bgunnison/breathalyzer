@@ -118,6 +118,16 @@ It copies the built bundles to:
 
 If deployment fails, close Ableton Live first so the installed plugin bundle is not locked.
 
+## Release Zip
+
+Use:
+
+```powershell
+release.bat
+```
+
+This creates `Breathalyzer.vst3.zip` in the repo root from `build\VST3\Release\Breathalyzer.vst3`.
+
 ## Repo Layout
 
 - `project.md`: original product and sound-design brief
@@ -128,3 +138,4 @@ If deployment fails, close Ableton Live first so the installed plugin bundle is 
 - `vst3\src\WeCore\`: vendored Songbird/WE-Core formant filter subset
 - `build.bat`: configure and build Debug/Release
 - `deploy.bat`: copy built bundles into the local plugin folder
+- `release.bat`: create the release zip from the Release bundle
